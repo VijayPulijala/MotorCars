@@ -1,0 +1,127 @@
+---
+title: "MtCars_Prj"
+author: "Vijay Pulijala"
+date: "October 7, 2016"
+output: 
+  pdf_document: 
+    keep_tex: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Executive Summary
+
+Given the data provided in 'mtcars', a linear regression model was calculated using correlation, analysis of predictor variance, and significant linear regression coefficients.
+
+The final resultant model found transmission type to be an insignificant predictor for MPG, therefore no confident conclusions can be made regarding transmission type's correlation with MPG, nor could quantified relationships between the two variables be calculated.
+
+Instead, the only statistically significant parameters -- given the provided data -- were found to be 'number of cylinders' and 'weight', by which the formula holds true:
+
+```{r, eval=FALSE}
+mpg = 39.6863 + (-1.5078)cyl + (-3.1910)wt
+```
+
+#Exploratory Analysis
+
+We're interested in how data variables affect MPG. That said, let's take a quick look at the data & the correlations between the other varables and MPG:
+
+```{r echo=FALSE}
+library(datasets)
+data(mtcars)
+cor(mtcars, mtcars$mpg)[-1,]
+```
+
+Number of cylinders, displacement, and weight have the strongest correlations with MPG. Let's quantify those relationships further.
+
+#Analysis of the Variance of the Predictors
+
+```{r echo=FALSE}
+summary(aov(mpg ~ ., data=mtcars))
+```
+
+Analysis of the variance of the predictors as they relate to MPG further identifies engine configuration (vs) as the relatively least significant regressor. Let's remove it and reassess our pending model. We'll iteratively continue this until all predictors are significant. Then, we'll calculate coefficients.
+
+
+#Linear Regression Model
+
+```{r echo=FALSE}
+fit1 <- lm(mtcars$mpg ~ cyl + disp + wt, data=subset(mtcars, select=c(mpg, cyl, disp, wt)))
+summary(fit1)$coefficients
+```
+
+With this model, disp becomes insignificant once again, therefore we reduce the data again and reevaluate:
+
+```{r echo=FALSE}
+fit2 <- lm(mtcars$mpg ~ cyl + wt, data=subset(mtcars, select=c(mpg, cyl, wt)))
+summary(fit2)$coefficients
+```
+
+#Residuals
+
+Plotting the residuals produces no obvious patterns:
+
+```{r echo=FALSE}
+plot(resid(fit2) ~ predict(fit2))
+```
+
+Therefore, we have a linear model to help answer the pending questions:
+
+1. Is an automatic or manual transmission better for MPG?
+
+_Given the transmission type does not have a significant impact on MPG.
+
+1.Quantify the MPG difference between automatic and manual transmissions?
+
+_Unable to quantify this regressors impact because it's insignificant by the calculated model
+
+#Appendix A
+
+###Original context:
+
+You work for Motor Trend, a magazine about the automobile industry. Looking at a data set of a collection of cars, they are interested in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). They are particularly interested in the following two questions:
+
+Is an automatic or manual transmission better for MPG?
+Quantify the MPG difference between automatic and manual transmissions?
+
+#Appendix B
+
+###Ouput of summary data:
+
+```{r}
+summary(mtcars)
+```
+
+
+#Appendix C
+
+All code used in this report:
+
+```{r eval=FALSE}
+
+library(datasets)
+data(mtcars)
+cor(mtcars, mtcars$mpg)[-1,]
+summary(aov(mpg ~ ., data=mtcars))
+
+fit1 <- lm(mtcars$mpg ~ cyl + disp + wt, data=subset(mtcars, select=c(cyl, disp, wt)))
+summary(fit1)$coefficients
+
+fit2 <- lm(mtcars$mpg ~ cyl + wt, data=subset(mtcars, select=c(cyl, wt)))
+summary(fit2)$coefficients
+plot(resid(fit2) ~ predict(fit2))
+```
+
+#Appendix D
+
+###Confidence interval example:
+
+```{r eval=FALSE}
+coef <- summary(fit2)$coefficients
+int95cyl <- (coef['cyl', 1] + c(-1, 1) * qt(0.975, df=fit2$df) * coef['cyl', 2]) * 2
+int95wt <- coef['wt', 1] + c(-1, 1) * qt(0.975, df=fit2$df) * coef['wt', 2]
+```
+#At 95% confidence, for each increase in cylinders (by 2), we find between 1.32 and 4.71 decrease in MPG.
+
+#At 95% confidence, for each 1000lb increase weight, we find between 1.64 and 4.74 decrease in MPG.
